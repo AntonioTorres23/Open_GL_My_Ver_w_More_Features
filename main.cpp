@@ -89,14 +89,14 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	// load model after enabling GL_DEPTH_TEST
-	Model_OBJ model("Models/N64 Logo/n64_logo.obj");
-	
+	//Model_OBJ model("Models/N64 Logo/n64_logo.obj");
+	Model_OBJ model("Models/teapot/teapot.obj");
 
 	// object titled shader that is apart of the SDR class, takes in two arguments which are the vertex shader file path and the fragment shader file path
 	SDR shader_for_cube("lighting_test.vert", "lighting_test.frag");
 
 	// set up the shader proggram that we will use for our model
-	SDR model_shader("model_lighting_test.vert", "model_lighting_test.frag");
+	SDR model_shader("model_lighting_multiple_light_sources.vert", "model_lighting_multiple_light_sources.frag");
 
 
 	// our vertices to draw with OpenGL
@@ -163,15 +163,17 @@ int main()
 	std::vector<glm::vec3> object_model_transormation_world_positions
 	{
 		glm::vec3(0.0, 0.0, 0.0),
-		glm::vec3(2.0, 0.0, 0.0),
-		glm::vec3(-2.0, 0.0, 0.0)
+		glm::vec3(150.0, 0.0, 0.0),
+		glm::vec3(-150.0, 0.0, 0.0)
 
 	};
 
 
 	std::vector<glm::vec3> light_pos
 	{
-		glm::vec3(-4.0, 1.0, 8.0)
+		glm::vec3(3.0, -1.0, 3.0),
+		glm::vec3(2.0, 1.0, -1.0),
+		glm::vec3(4.0, 3.0, 2)
 	};
 
 	// Creating a vertex buffer object and a vertex array object 
@@ -267,8 +269,6 @@ int main()
 
 	
 
-
-
 		// bind the vertex array you created earlier
 		//glBindVertexArray(VERTEX_ARRAY_OBJECT);
 
@@ -277,7 +277,7 @@ int main()
 
 		model_shader.activate_shader();
 
-		glm::vec3 color_of_light = glm::vec3(1.0f, sin_translate, sin_translate);
+		glm::vec3 color_of_light = glm::vec3(sin_translate, sin_translate, 1.0f);
 
 		model_shader.uniform_vector_3("color_of_light", color_of_light);
 
@@ -305,7 +305,7 @@ int main()
 			transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
 
 			// scale this object down by 0.5 across all 3 coordinates
-			transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5, 0.5, 0.5));
+			transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.005, 0.005, 0.005));
 
 			// transformation matrix is translated over time to move between values 0.0-1.0 on whatever axis we specified
 
@@ -339,25 +339,42 @@ int main()
 
 		shader_for_cube.uniform_vector_3("color_of_light", color_of_light);
 
+		shader_for_cube.uniform_vector_3("light_pos[0].world_space_position", light_pos[0]);
+		shader_for_cube.uniform_float("light_pos[0].constant", 1.0f);
+		shader_for_cube.uniform_float("light_pos[0].lin", 0.35);
+		shader_for_cube.uniform_float("light_pos[0].quad", 0.44);
+
+		shader_for_cube.uniform_vector_3("light_pos[1].world_space_position", light_pos[1]);
+		shader_for_cube.uniform_float("light_pos[1].constant", 1.0f);
+		shader_for_cube.uniform_float("light_pos[1].lin", 0.35);
+		shader_for_cube.uniform_float("light_pos[1].quad", 0.44);
+
+		shader_for_cube.uniform_vector_3("light_pos[2].world_space_position", light_pos[2]);
+		shader_for_cube.uniform_float("light_pos[2].constant", 1.0f);
+		shader_for_cube.uniform_float("light_pos[2].lin", 0.35);
+		shader_for_cube.uniform_float("light_pos[2].quad", 0.44);
+
+
 		glBindVertexArray(VERTEX_ARRAY_OBJECT);
 
 		glm::mat4 transformation_matrix = glm::mat4(1.0f);
 
 		//transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
 
-		transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5, 0.5, 0.5));
-
-		transformation_matrix = glm::translate(transformation_matrix, light_pos[0]);
-
-		shader_for_cube.uniform_matrix_4("transformation_matrix", transformation_matrix);
+		//transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5, 0.5, 0.5));
 
 		shader_for_cube.uniform_matrix_4("view_matrix", view_matrix);
 
 		shader_for_cube.uniform_matrix_4("perspective_matrix", perspective_matrix);
 
+		for (unsigned int pos = 0; pos < light_pos.size(); pos++)
+		{
+			transformation_matrix = glm::translate(transformation_matrix, light_pos[pos]);
 
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+			shader_for_cube.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 		
 
 		// Swaps the front and back buffers of the specified window's double-buffer

@@ -73,5 +73,11 @@
     <None Include="model_lighting_test.frag">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="model_lighting_multiple_light_sources.vert">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="model_lighting_multiple_light_sources.frag">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -172,6 +172,8 @@
     <None Include="fragment_shader_test.frag" />
     <None Include="lighting_test.frag" />
     <None Include="lighting_test.vert" />
+    <None Include="model_lighting_multiple_light_sources.frag" />
+    <None Include="model_lighting_multiple_light_sources.vert" />
     <None Include="model_lighting_test.frag" />
     <None Include="model_lighting_test.vert" />
     <None Include="model_test.frag" />
