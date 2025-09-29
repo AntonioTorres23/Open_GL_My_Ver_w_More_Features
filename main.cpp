@@ -99,6 +99,8 @@ int main()
 	SDR model_shader("model_lighting_multiple_light_sources.vert", "model_lighting_multiple_light_sources.frag");
 
 
+
+
 	// our vertices to draw with OpenGL
 	float vertex_data[] = {
 
@@ -160,6 +162,70 @@ int main()
 
 	};
 
+	// all local coordinates are at position 1.0 or -1.0 which are the furthest coordiantes you can have within local space
+	float verticies_for_skybox[] =
+	{
+		// BACK FACE SQUARE
+		// back face 1st triangle
+		-1.0f, 1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		1.0f, -1.0f, -1.0f,
+		// back face 2nd triangle
+		1.0f, -1.0f, -1.0f, 
+		1.0f, 1.0f, -1.0f, 
+		-1.0f, 1.0f, -1.0f,
+
+		// LEFT FACE SQUARE
+		// left face 1st triangle
+		-1.0f, -1.0f, 1.0f, 
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, 1.0f, -1.0f,
+		// left face 2nd triangle
+		-1.0f, 1.0f, -1.0f
+		-1.0f, 1.0f, 1.0f, 
+		-1.0f, -1.0f, 1.0f, 
+
+		// RIGHT FACE SQUARE
+		// right face 1st triangle
+		1.0f, -1.0f, -1.0f, 
+		1.0f, -1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 
+		// right face 2nd triangle
+		1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f, 
+		1.0f, -1.0f, -1.0f,
+
+		// FRONT FACE SQUARE
+		// front face 1st triangle
+		-1.0f, -1.0f, 1.0f, 
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 
+		// front face 2nd triangle
+		1.0f, 1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f, 
+		-1.0f, -1.0f, 1.0f,
+
+		// TOP FACE SQUARE
+		// top face 1st triangle
+		-1.0f, 1.0f, -1.0f, 
+		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, 1.0f, 
+		// top face 2nd triangle
+		1.0f, 1.0f, 1.0f, 
+		-1.0f, 1.0f, 1.0f,
+		-1.0f, 1.0f, -1.0f
+
+		// BOTTOM FACE SQUARE
+		// bottom face 1st triangle
+		-1.0f, -1.0f, -1.0f, 
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, -1.0f,
+		// bottom face 2nd triangle
+		1.0f, -1.0f, -1.0f, 
+		-1.0f, -1.0f, 1.0f,
+		1.0f, -1.0f, 1.0f
+	};
+
 	std::vector<glm::vec3> object_model_transormation_world_positions
 	{
 		glm::vec3(0.0, 0.0, 0.0),
@@ -197,6 +263,23 @@ int main()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	// enable that vertex attribute to point 1
 	glEnableVertexAttribArray(1);
+
+	// Create a vertex buffer object and a vertex array object for the sky box
+	unsigned int SKYBOX_VBO, SKYBOX_VAO;
+	// generate 1 vertex array object with glGenVertexArrays for the sky box
+	glGenVertexArrays(1, &SKYBOX_VAO);
+	// generate 1 vertex buffer object with glGenBuffers for the skybox
+	glGenBuffers(1, &SKYBOX_VBO);
+	// bind the vertex array object with glBindVertexArray for the skybox
+	glBindVertexArray(SKYBOX_VAO);
+	// bind the vertex buffer object to a gl array buffer using glBindBuffer for the skybox
+	glBindBuffer(GL_ARRAY_BUFFER, SKYBOX_VBO);
+	// tell OpenGL what type of data to take in, the array that the vertex data is stored, the size of that array, and how it should draw that data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticies_for_skybox), verticies_for_skybox, GL_STATIC_DRAW);
+	// sets the position attribute within the vertex data, like which attribute to start on, how many vertices to expect, what data type to use, whether the data to be in unsigned ints form, the size of each vertex attribute, and the offset
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	// enable that vertex attribute to point 0
+	glEnableVertexAttribArray(0);
 
 	//unsigned int tex_to_shader = tex_load("water.png");
 
@@ -277,7 +360,8 @@ int main()
 
 		model_shader.activate_shader();
 
-		glm::vec3 color_of_light = glm::vec3(sin_translate, sin_translate, 1.0f);
+		//glm::vec3 color_of_light = glm::vec3(sin_translate, sin_translate, 1.0f);
+		glm::vec3 color_of_light = glm::vec3(1.0f, 1.0f, 1.0f);
 
 		model_shader.uniform_vector_3("color_of_light", color_of_light);
 
@@ -328,14 +412,11 @@ int main()
 
 			model.Draw_Model(model_shader);
 
-			
-
-
 		}
 
-
-
 		shader_for_cube.activate_shader();
+
+		shader_for_cube.uniform_vector_3("direction_lighting_var.light_direction", -0.2f, -1.0f, -0.3f);
 
 		shader_for_cube.uniform_vector_3("color_of_light", color_of_light);
 
@@ -508,4 +589,65 @@ unsigned int tex_load(char const *tex_path)
 	}
 
 	return texID;
+}
+
+// function that loads vector of strings that contain the file paths to each face of the skybox (cubemap)
+// a skybox/cubemap only uses the positional vertex data and does not contain any texture coordinates
+unsigned int skybox_load(std::vector<std::string> skybox_faces_arg)
+{
+	// LOGIC IS SIMILAR TO THE FUNCTION ABOVE THAT LOADS ONE TEXTURE HOWEVER WE ARE GOING TO LOOP THROUGH EACH TEXTURE STORED WITHIN THE SKYBOX VECTOR ARGUMENT PROVIDED
+	
+	// provide an unsigned int variable that will store the texture id
+	unsigned int texID;
+	// use the address of that unsigned int previously and generate a texture object with the glfw built-in function
+	glGenTextures(1, &texID);
+	// bind current texture ID to a GL_TEXTURE_CUBE_MAP texture type
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+	// now we provide some integer variables that will be used for the dimensions of the texture provided as well as the number of components like RGB or RGBA
+	int w, h, amount_of_RGB_components;
+	// create a for loop that goes through each path of the textures that are stored in skybox_faces_arg, and load the texture/add texture parameters
+	for (unsigned int face = 0; face < skybox_faces_arg.size(); face++)
+	{
+		// a pointer variable that uses the built-in stbi_load function to load the image into binary data that OpenGL can use to generate a texture
+		// in this function we index through the skybox_face_arg string vector using the for loop face argument to go through each texture path stored in the C++ string vector
+		// also note how we have to convert our string to a c string since that is what the stbi_load function expects
+		unsigned char* tex_data = stbi_load(skybox_faces_arg[face].c_str(), &w, &h, &amount_of_RGB_components, 0);
+
+		// if statment that if tex_data exists or is true do the code within the brackets
+		if (tex_data)
+		{
+			// create a GLenum variable that takes the amount of color components that where gathered prior from the tex_data pointer and assign it to a enmueration that matches the color components gathered
+			GLenum tex_col_format;
+			if (amount_of_RGB_components == 1)
+				tex_col_format = GL_RED;
+			if (amount_of_RGB_components == 3)
+				tex_col_format = GL_RGB;
+			if (amount_of_RGB_components == 4)
+				tex_col_format = GL_RGBA;
+
+			// since GL_TEXTURE_CUBE_MAP int values are linearly incremented, we can loop over them using our face argument
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X + face, 0, tex_col_format, w, h, 0, tex_col_format, GL_UNSIGNED_BYTE, tex_data);
+			stbi_image_free(tex_data);
+		}
+		else
+		{
+			std::cout << "Cannot Load Skybox Texture: " << skybox_faces_arg[face] << std::endl;
+			stbi_image_free(tex_data);
+		}
+	}
+	// configure texture parameters
+	// set filtering options for minimum (for textures on objects that are far away)
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // we are only using the linear filtering method, no mipmap
+	// set filtering options for magnification (for textures on objects that are close)
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR); // we are only using the linear filtering method, no mipmap
+	// texture wrapping options for the s coordinates; we use clamp to edge to ensure that the texture covers the entire skybox face
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); // S is our X coordinate for textures
+	// texture wrapping options for the t coordinates
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // T is our Y coordinates for textures
+	// texture wrapping options for the r coordinates
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE); // R is our Z coordinates for textures
+
+	// return texID
+	return texID;
+	
 }

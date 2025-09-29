@@ -7,6 +7,13 @@ layout (location = 2) in vec2 texture_position_coordinates;
 
 out vec2 fragment_texture_coordinates;
 
+// DirectionLighting Structure to hold all the data of the global direction light
+// think of the directional light as "world light"; it mimics lighting such as the sun
+struct DirectionalLighting
+{
+	vec3 light_direction;
+};
+
 // PosLight Structure to hold all the data of lights that are positional based
 struct PosLight
 {
@@ -25,7 +32,9 @@ struct PosLight
 
 // GOURAUD SHADING: lighting done in the vertex shader to save on memory
 
-out float lighting;
+out float pos_lighting;
+
+out float directional_lighting;
 
 uniform mat4 transformation_matrix;
 
@@ -39,8 +48,32 @@ uniform vec3 pos_of_camera;
 
 uniform mat3 transformation_matrix_for_normal_coordinates;
 
+uniform DirectionalLighting direction_lighting_var;
+
 // we can make this a uniform value with the data type of our previously defined structure
-uniform PosLight pos_light_var[AMMOUNT_OF_POS_LIGHTS]; 
+uniform PosLight pos_light_var[AMMOUNT_OF_POS_LIGHTS];
+
+float DirectionalLightingCalculations (DirectionalLighting direction_lighting_arg, vec3 normal_coordinates_arg, vec3 pos_of_camera_arg)
+{
+	// we only negate the light direction since directional lighting affects everything in the environment
+	vec3 light_direction = normalize(-direction_lighting_arg.light_direction);
+
+	// ambient lighting, the darkest of the shading
+	float ambient_lighting = 0.2;
+
+	// calculations for diffuse_lighting
+	float diffuse_lighting = max(dot(normal_coordinates_arg, light_direction), 0.0);
+
+	// relection for specular_lighting
+	vec3 direction_of_reflection = reflect(-light_direction, normal_coordinates_arg);
+	
+	// we only need the position of the camera and the direction of reflection since there is no "distance" between the light pos and the model/obj(s)
+	float specular_lighting = pow(max(dot(pos_of_camera_arg, direction_of_reflection), 0.0), 128);
+
+
+	return (ambient_lighting + diffuse_lighting + specular_lighting);
+}
+
 
 float PosLightCalculations (PosLight pos_light_struct_arg, vec3 normal_coordiantes_arg, vec3 position_of_models_fragments_arg, vec3 pos_of_camera_arg)
 {
@@ -112,8 +145,10 @@ void main()
 
 	gl_Position =   perspective_matrix * view_matrix * transformation_matrix * vec4(vector_position_coordinates, 1.0);
 
+	directional_lighting = DirectionalLightingCalculations(direction_lighting_var, normalized_normal_coordniates, direction_of_camera_from_model);
+
 	for (int pos = 0; pos < AMMOUNT_OF_POS_LIGHTS; pos++)
-		lighting = PosLightCalculations(pos_light_var[pos], normalized_normal_coordniates, position_of_models_fragments, direction_of_camera_from_model);
+		pos_lighting = PosLightCalculations(pos_light_var[pos], normalized_normal_coordniates, position_of_models_fragments, direction_of_camera_from_model);
 
 
 }
