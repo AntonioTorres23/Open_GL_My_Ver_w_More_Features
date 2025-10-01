@@ -21,6 +21,7 @@ void keyboard_functionality(GLFWwindow *win);
 void mouse_functionality(GLFWwindow* win, double raw_mouse_yaw, double raw_mouse_pitch);
 void window_resize_callback(GLFWwindow *win, int w, int h);
 unsigned int tex_load(const char *tex_path);
+unsigned int skybox_load(std::vector<std::string> skybox_faces_arg);
 
 
 // screen dimensions stored as global integer variables
@@ -98,8 +99,8 @@ int main()
 	// set up the shader proggram that we will use for our model
 	SDR model_shader("model_lighting_multiple_light_sources.vert", "model_lighting_multiple_light_sources.frag");
 
-
-
+	// set up the shader program that we wil use for our skybox
+	SDR skybox_shader("skybox.vert", "skybox.frag");
 
 	// our vertices to draw with OpenGL
 	float vertex_data[] = {
@@ -164,7 +165,7 @@ int main()
 
 	// all local coordinates are at position 1.0 or -1.0 which are the furthest coordiantes you can have within local space
 	float verticies_for_skybox[] =
-	{
+	{	
 		// BACK FACE SQUARE
 		// back face 1st triangle
 		-1.0f, 1.0f, -1.0f,
@@ -181,7 +182,7 @@ int main()
 		-1.0f, -1.0f, -1.0f,
 		-1.0f, 1.0f, -1.0f,
 		// left face 2nd triangle
-		-1.0f, 1.0f, -1.0f
+		-1.0f, 1.0f, -1.0f,
 		-1.0f, 1.0f, 1.0f, 
 		-1.0f, -1.0f, 1.0f, 
 
@@ -208,12 +209,12 @@ int main()
 		// TOP FACE SQUARE
 		// top face 1st triangle
 		-1.0f, 1.0f, -1.0f, 
-		-1.0f, 1.0f, 1.0f,
+		1.0f, 1.0f, -1.0f,
 		1.0f, 1.0f, 1.0f, 
 		// top face 2nd triangle
 		1.0f, 1.0f, 1.0f, 
 		-1.0f, 1.0f, 1.0f,
-		-1.0f, 1.0f, -1.0f
+		-1.0f, 1.0f, -1.0f,
 
 		// BOTTOM FACE SQUARE
 		// bottom face 1st triangle
@@ -224,6 +225,51 @@ int main()
 		1.0f, -1.0f, -1.0f, 
 		-1.0f, -1.0f, 1.0f,
 		1.0f, -1.0f, 1.0f
+		
+
+		/*
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+		 */
 	};
 
 	std::vector<glm::vec3> object_model_transormation_world_positions
@@ -241,6 +287,17 @@ int main()
 		glm::vec3(2.0, 1.0, -1.0),
 		glm::vec3(4.0, 3.0, 2)
 	};
+
+	std::vector<std::string> sky_box_textures
+	{
+		"skybox/right.jpg", 
+		"skybox/left.jpg",
+		"skybox/top.jpg",
+		"skybox/bottom.jpg",
+		"skybox/back.jpg",
+		"skybox/front.jpg"
+	};
+
 
 	// Creating a vertex buffer object and a vertex array object 
 	unsigned int VERTEX_BUFFER_OBJECT, VERTEX_ARRAY_OBJECT;
@@ -303,12 +360,20 @@ int main()
 
 	//shader.uniform_int("layer_tex", 1);
 
+	unsigned int skybox_texID = skybox_load(sky_box_textures);
+
+	std::cout << skybox_texID << std::endl; 
+
+	skybox_shader.activate_shader();
+
+	skybox_shader.uniform_int("skybox_texture", 0);
+
 	// Our loop where we render every frame to the window
 	// If window is closed is set to true or becomes apparent, this while loop will be exited
+
+
 	while (!glfwWindowShouldClose(win))
 	{
-
-
 
 		// current frame variable
 		float cFrame = static_cast<float>(glfwGetTime());
@@ -320,7 +385,7 @@ int main()
 		keyboard_functionality(win);
 		// rendering proccess
 		// clears the color buffer and sets it to the RGBA in glClearColor
-		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+		glClearColor(0.3f, 0.3f, 0.9f, 1.0f);
 		// This actually clears the buffer of the entire framebuffer as well as the depth buffer each frame in this while loop which is are renderer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -364,7 +429,6 @@ int main()
 		glm::vec3 color_of_light = glm::vec3(1.0f, 1.0f, 1.0f);
 
 		model_shader.uniform_vector_3("color_of_light", color_of_light);
-
 
 		model_shader.uniform_matrix_4("view_matrix", view_matrix);
 
@@ -455,8 +519,36 @@ int main()
 			shader_for_cube.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
 			glDrawArrays(GL_TRIANGLES, 0, 36);
+	
 		}
 		
+		glBindVertexArray(0);
+
+		// enable depth function so that it passes vertices that are equal to depth buffer's content
+		glDepthFunc(GL_LEQUAL);
+
+		// activate our skybox shader
+		skybox_shader.activate_shader();
+
+		// transforming this 4x4 matrix to a 3x3 with no values in the 4th column to prevent w coordinate from making translations
+		view_matrix = glm::mat4(glm::mat3(cam_and_mov_obj.Obtain_View_Matrix()));
+		
+		skybox_shader.uniform_matrix_4("view_matrix", view_matrix);
+
+		skybox_shader.uniform_matrix_4("perspective_matrix", perspective_matrix);
+
+		glBindVertexArray(SKYBOX_VAO);
+
+		// activate skybox texture
+		glActiveTexture(GL_TEXTURE0);
+
+		glBindTexture(GL_TEXTURE_CUBE_MAP, skybox_texID);
+
+		// draw skybox
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		// set depth func back to original state which is GL_LESS
+		glDepthFunc(GL_LESS);
 
 		// Swaps the front and back buffers of the specified window's double-buffer
 		glfwSwapBuffers(win);
@@ -595,6 +687,9 @@ unsigned int tex_load(char const *tex_path)
 // a skybox/cubemap only uses the positional vertex data and does not contain any texture coordinates
 unsigned int skybox_load(std::vector<std::string> skybox_faces_arg)
 {
+	
+	
+	
 	// LOGIC IS SIMILAR TO THE FUNCTION ABOVE THAT LOADS ONE TEXTURE HOWEVER WE ARE GOING TO LOOP THROUGH EACH TEXTURE STORED WITHIN THE SKYBOX VECTOR ARGUMENT PROVIDED
 	
 	// provide an unsigned int variable that will store the texture id
@@ -611,11 +706,12 @@ unsigned int skybox_load(std::vector<std::string> skybox_faces_arg)
 		// a pointer variable that uses the built-in stbi_load function to load the image into binary data that OpenGL can use to generate a texture
 		// in this function we index through the skybox_face_arg string vector using the for loop face argument to go through each texture path stored in the C++ string vector
 		// also note how we have to convert our string to a c string since that is what the stbi_load function expects
-		unsigned char* tex_data = stbi_load(skybox_faces_arg[face].c_str(), &w, &h, &amount_of_RGB_components, 0);
+		unsigned char *tex_data = stbi_load(skybox_faces_arg[face].c_str(), &w, &h, &amount_of_RGB_components, 0);
 
 		// if statment that if tex_data exists or is true do the code within the brackets
 		if (tex_data)
 		{
+			
 			// create a GLenum variable that takes the amount of color components that where gathered prior from the tex_data pointer and assign it to a enmueration that matches the color components gathered
 			GLenum tex_col_format;
 			if (amount_of_RGB_components == 1)
@@ -624,9 +720,10 @@ unsigned int skybox_load(std::vector<std::string> skybox_faces_arg)
 				tex_col_format = GL_RGB;
 			if (amount_of_RGB_components == 4)
 				tex_col_format = GL_RGBA;
-
+			
+			
 			// since GL_TEXTURE_CUBE_MAP int values are linearly incremented, we can loop over them using our face argument
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X + face, 0, tex_col_format, w, h, 0, tex_col_format, GL_UNSIGNED_BYTE, tex_data);
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, tex_col_format, w, h, 0, tex_col_format, GL_UNSIGNED_BYTE, tex_data);
 			stbi_image_free(tex_data);
 		}
 		else
