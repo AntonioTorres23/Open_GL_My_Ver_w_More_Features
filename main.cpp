@@ -91,13 +91,13 @@ int main()
 
 	// load model after enabling GL_DEPTH_TEST
 	//Model_OBJ model("Models/N64 Logo/n64_logo.obj");
-	Model_OBJ model("Models/teapot/teapot.obj");
+	Model_OBJ model("Models/N64 Logo/n64_logo.obj");
+
+	// set up the shader proggram that we will use for our model
+	SDR model_shader("model_lighting_multiple_light_sources_gourand_2.vert", "model_lighting_multiple_light_sources_gourand_2.frag");
 
 	// object titled shader that is apart of the SDR class, takes in two arguments which are the vertex shader file path and the fragment shader file path
 	SDR shader_for_cube("lighting_test.vert", "lighting_test.frag");
-
-	// set up the shader proggram that we will use for our model
-	SDR model_shader("model_lighting_multiple_light_sources.vert", "model_lighting_multiple_light_sources.frag");
 
 	// set up the shader program that we wil use for our skybox
 	SDR skybox_shader("skybox.vert", "skybox.frag");
@@ -231,17 +231,17 @@ int main()
 	std::vector<glm::vec3> object_model_transormation_world_positions
 	{
 		glm::vec3(0.0, 0.0, 0.0),
-		glm::vec3(150.0, 0.0, 0.0),
-		glm::vec3(-150.0, 0.0, 0.0)
+		glm::vec3(2.0, 0.0, 0.0),
+		glm::vec3(-2.0, 0.0, 0.0)
 
 	};
 
 
 	std::vector<glm::vec3> light_pos
 	{
-		glm::vec3(3.0, -1.0, 3.0),
-		glm::vec3(2.0, 1.0, -1.0),
-		glm::vec3(4.0, 3.0, 2)
+		glm::vec3(3.0, 3.0, 3.0),
+		glm::vec3(-2.0, -1.0, -1.0),
+		glm::vec3(4.0, -3.0, 2)
 	};
 
 	std::vector<std::string> sky_box_textures
@@ -384,16 +384,56 @@ int main()
 		//glm::vec3 color_of_light = glm::vec3(sin_translate, sin_translate, 1.0f);
 		glm::vec3 color_of_light = glm::vec3(1.0f, 1.0f, 1.0f);
 
-		model_shader.uniform_vector_3("color_of_light", color_of_light);
+		//model_shader.uniform_vector_3("color_of_light", color_of_light);
 
 		model_shader.uniform_matrix_4("view_matrix", view_matrix);
 
 		model_shader.uniform_matrix_4("perspective_matrix", perspective_matrix);
 
-		model_shader.uniform_vector_3("light_pos", light_pos[0]);
+		//model_shader.uniform_vector_3("light_pos", light_pos[0]);
 
 		model_shader.uniform_vector_3("pos_of_camera", cam_and_mov_obj.obj_cam_pos);
 
+		model_shader.uniform_vector_3("direction_lighting_var.light_direction", -0.2f, -1.0f, -0.3f);
+
+		model_shader.uniform_vector_3("direction_lighting_var.ambient_color", 0.1f, 0.1f, 0.1f);
+		model_shader.uniform_vector_3("direction_lighting_var.diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("direction_lighting_var.specular_color", 1.0f, 1.0f, 1.0f);
+
+
+		model_shader.uniform_vector_3("light_pos_var[0].world_space_position", light_pos[0]);
+
+		model_shader.uniform_vector_3("pos_light_var[0].ambient_color", 0.1f, 0.1f, 0.1f);
+		model_shader.uniform_vector_3("pos_light_var[0].diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("pos_light_var[0].specular_color", 1.0f, 1.0f, 1.0f);
+
+		model_shader.uniform_float("pos_light_var[0].constant", 1.0f);
+		model_shader.uniform_float("pos_light_var[0].lin", 0.09f);
+		model_shader.uniform_float("pos_light_var[0].quad", 0.032f);
+
+
+		model_shader.uniform_vector_3("pos_light_var[1].world_space_position", light_pos[1]);
+
+
+		model_shader.uniform_vector_3("pos_light_var[1].ambient_color", 0.1f, 0.1f, 0.1f);
+		model_shader.uniform_vector_3("pos_light_var[1].diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("pos_light_var[1].specular_color", 1.0f, 1.0f, 1.0f);
+
+		model_shader.uniform_float("pos_light_var[1].constant", 1.0f);
+		model_shader.uniform_float("pos_light_var[1].lin", 0.09f);
+		model_shader.uniform_float("pos_light_var[1].quad", 0.032f);
+
+		model_shader.uniform_vector_3("pos_light_var[2].world_space_position", light_pos[2]);
+
+		model_shader.uniform_vector_3("pos_light_var[2].ambient_color", 0.1f, 0.1f, 0.1f);
+		model_shader.uniform_vector_3("pos_light_var[2].diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("pos_light_var[2].specular_color", 1.0f, 1.0f, 1.0f);
+
+		model_shader.uniform_float("pos_light_var[2].constant", 1.0f);
+		model_shader.uniform_float("pos_light_var[2].lin", 0.09f);
+		model_shader.uniform_float("pos_light_var[2].quad", 0.032f);
+
+		/*
 
 		for (int i = 0; i < object_model_transormation_world_positions.size(); i++)
 		{
@@ -409,7 +449,7 @@ int main()
 			transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
 
 			// scale this object down by 0.5 across all 3 coordinates
-			transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.005, 0.005, 0.005));
+			transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5));
 
 			// transformation matrix is translated over time to move between values 0.0-1.0 on whatever axis we specified
 
@@ -433,32 +473,35 @@ int main()
 			model.Draw_Model(model_shader);
 
 		}
+		*/
+
+		glm::mat4 transformation_matrix = glm::mat4(1.0f);
+
+		transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0, 1.0, 0.0));
+
+		transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5));
+
+		glm::mat3 transformation_matrix_for_normal_coordinates = glm::mat3(1.0f);
+
+		transformation_matrix_for_normal_coordinates = glm::transpose(glm::inverse(transformation_matrix));
+
+		model_shader.uniform_matrix_3("transformation_matrix_for_normal_coordinates", transformation_matrix_for_normal_coordinates);
+
+		model_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
+
+		model.Draw_Model(model_shader);
 
 		shader_for_cube.activate_shader();
 
-		shader_for_cube.uniform_vector_3("direction_lighting_var.light_direction", -0.2f, -1.0f, -0.3f);
+		//shader_for_cube.uniform_vector_3("direction_lighting_var.light_direction", -0.2f, -1.0f, -0.3f);
 
 		shader_for_cube.uniform_vector_3("color_of_light", color_of_light);
 
-		shader_for_cube.uniform_vector_3("light_pos[0].world_space_position", light_pos[0]);
-		shader_for_cube.uniform_float("light_pos[0].constant", 1.0f);
-		shader_for_cube.uniform_float("light_pos[0].lin", 0.35);
-		shader_for_cube.uniform_float("light_pos[0].quad", 0.44);
-
-		shader_for_cube.uniform_vector_3("light_pos[1].world_space_position", light_pos[1]);
-		shader_for_cube.uniform_float("light_pos[1].constant", 1.0f);
-		shader_for_cube.uniform_float("light_pos[1].lin", 0.35);
-		shader_for_cube.uniform_float("light_pos[1].quad", 0.44);
-
-		shader_for_cube.uniform_vector_3("light_pos[2].world_space_position", light_pos[2]);
-		shader_for_cube.uniform_float("light_pos[2].constant", 1.0f);
-		shader_for_cube.uniform_float("light_pos[2].lin", 0.35);
-		shader_for_cube.uniform_float("light_pos[2].quad", 0.44);
-
-
 		glBindVertexArray(VERTEX_ARRAY_OBJECT);
 
-		glm::mat4 transformation_matrix = glm::mat4(1.0f);
+		//glm::mat4 transformation_matrix = glm::mat4(1.0f);
+
+		transformation_matrix = glm::mat4(1.0f);
 
 		//transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
 
