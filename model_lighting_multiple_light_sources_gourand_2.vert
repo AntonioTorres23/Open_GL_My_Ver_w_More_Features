@@ -44,10 +44,6 @@ struct PosLight
 
 // GOURAUD SHADING: lighting done in the vertex shader to save on memory
 
-//out float pos_lighting;
-
-//out float directional_lighting;
-
 out vec3 lighting;
 
 uniform mat4 transformation_matrix;
@@ -94,15 +90,11 @@ vec3 DirectionalLightingCalculations (DirectionalLighting direction_lighting_arg
 	vec3 specular_result = direction_lighting_arg.specular_color * specular_lighting;
 
 	return (ambient_result + diffuse_result + specular_result);
-
-	//return (ambient_lighting + diffuse_lighting + specular_lighting);
 }
 
 
 vec3 PosLightCalculations (PosLight pos_light_struct_arg, vec3 normal_coordiantes_arg, vec3 position_of_models_fragments_arg, vec3 pos_of_camera_arg)
 {
-
-	//float ambient_lighting = 0.3;
 	
 	// grabs the direction the light is facing among the object and the lighting
 	// we get this via subtracting the position of the lighting from the position of the model's fragments in world space
@@ -132,18 +124,13 @@ vec3 PosLightCalculations (PosLight pos_light_struct_arg, vec3 normal_coordiante
 	// apply this algebraic formula to calculate attenuation
 	float atten = 1.0 / (pos_light_struct_arg.constant + pos_light_struct_arg.lin * dis_between_light_and_object + pos_light_struct_arg.quad * (dis_between_light_and_object * dis_between_light_and_object));
 
-	// apply attenuation to ambient lighting
-	//ambient_lighting *= atten;
-	// apply attenuation to diffuse lighting
-	//diffuse_lighting_calc *= atten;
-	// apply attenuation to specular lighting
-	//specular_lighting_calc *= atten;
-
 	vec3 ambient_result = pos_light_struct_arg.ambient_color * vec3(texture(diffTex1, texture_position_coordinates)); 
 
 	vec3 diffuse_result = pos_light_struct_arg.diffuse_color * diffuse_lighting_calc * vec3(texture(diffTex1, texture_position_coordinates));
 
 	vec3 specular_result = pos_light_struct_arg.specular_color * specular_lighting_calc * vec3(texture(diffTex1, texture_position_coordinates));
+
+	// apply attenuation to ambient lighting
 
 	ambient_result *= atten;
 
@@ -152,10 +139,7 @@ vec3 PosLightCalculations (PosLight pos_light_struct_arg, vec3 normal_coordiante
 	specular_result *= atten;
 
 	return (ambient_result + diffuse_result + specular_result);
-
-	//return (ambient_lighting + diffuse_lighting_calc + specular_lighting_calc);
 	
-
 }
 
 // diffuse lighting calculations
@@ -187,11 +171,5 @@ void main()
 		lighting += PosLightCalculations(pos_light_var[pos], normalized_normal_coordniates, position_of_models_fragments, direction_of_camera_from_model);
 
 	gl_Position = perspective_matrix * view_matrix * transformation_matrix * vec4(vector_position_coordinates, 1.0);
-
-	//directional_lighting = DirectionalLightingCalculations(direction_lighting_var, normalized_normal_coordniates, direction_of_camera_from_model);
-
-	//for (int pos = 0; pos < AMMOUNT_OF_POS_LIGHTS; pos++)
-	//	pos_lighting += PosLightCalculations(pos_light_var[pos], normalized_normal_coordniates, position_of_models_fragments, direction_of_camera_from_model);
-
 
 }

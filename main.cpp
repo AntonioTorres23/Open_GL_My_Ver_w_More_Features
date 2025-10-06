@@ -397,14 +397,14 @@ int main()
 		model_shader.uniform_vector_3("direction_lighting_var.light_direction", -0.2f, -1.0f, -0.3f);
 
 		model_shader.uniform_vector_3("direction_lighting_var.ambient_color", 0.1f, 0.1f, 0.1f);
-		model_shader.uniform_vector_3("direction_lighting_var.diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("direction_lighting_var.diffuse_color", 0.4f, 0.4f, 0.4f);
 		model_shader.uniform_vector_3("direction_lighting_var.specular_color", 1.0f, 1.0f, 1.0f);
 
 
 		model_shader.uniform_vector_3("light_pos_var[0].world_space_position", light_pos[0]);
 
 		model_shader.uniform_vector_3("pos_light_var[0].ambient_color", 0.1f, 0.1f, 0.1f);
-		model_shader.uniform_vector_3("pos_light_var[0].diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("pos_light_var[0].diffuse_color", 0.4f, 0.4f, 0.4f);
 		model_shader.uniform_vector_3("pos_light_var[0].specular_color", 1.0f, 1.0f, 1.0f);
 
 		model_shader.uniform_float("pos_light_var[0].constant", 1.0f);
@@ -416,7 +416,7 @@ int main()
 
 
 		model_shader.uniform_vector_3("pos_light_var[1].ambient_color", 0.1f, 0.1f, 0.1f);
-		model_shader.uniform_vector_3("pos_light_var[1].diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("pos_light_var[1].diffuse_color", 0.4f, 0.4f, 0.4f);
 		model_shader.uniform_vector_3("pos_light_var[1].specular_color", 1.0f, 1.0f, 1.0f);
 
 		model_shader.uniform_float("pos_light_var[1].constant", 1.0f);
@@ -426,12 +426,14 @@ int main()
 		model_shader.uniform_vector_3("pos_light_var[2].world_space_position", light_pos[2]);
 
 		model_shader.uniform_vector_3("pos_light_var[2].ambient_color", 0.1f, 0.1f, 0.1f);
-		model_shader.uniform_vector_3("pos_light_var[2].diffuse_color", 0.6f, 0.6f, 0.6f);
+		model_shader.uniform_vector_3("pos_light_var[2].diffuse_color", 0.4f, 0.4f, 0.4f);
 		model_shader.uniform_vector_3("pos_light_var[2].specular_color", 1.0f, 1.0f, 1.0f);
 
 		model_shader.uniform_float("pos_light_var[2].constant", 1.0f);
 		model_shader.uniform_float("pos_light_var[2].lin", 0.09f);
 		model_shader.uniform_float("pos_light_var[2].quad", 0.032f);
+
+		// SOURCE CODE FOR DRAWING MULTIPLE MODELS USING A FOR LOOP AND TRANSLATION MATRIX
 
 		/*
 
@@ -492,8 +494,6 @@ int main()
 		model.Draw_Model(model_shader);
 
 		shader_for_cube.activate_shader();
-
-		//shader_for_cube.uniform_vector_3("direction_lighting_var.light_direction", -0.2f, -1.0f, -0.3f);
 
 		shader_for_cube.uniform_vector_3("color_of_light", color_of_light);
 
