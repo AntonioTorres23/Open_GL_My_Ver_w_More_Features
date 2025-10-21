@@ -54,6 +54,9 @@ int main()
 	// Set window hint to specify what version of GLFW/OpenGL you are using
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// Set window hint to tell GLFW to use multisampling frame buffer of 4 subsamples per pixel
+	glfwWindowHint(GLFW_SAMPLES, 4);
+
 	// Tells what package or "profile" of OpenGL to use
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); 
 
@@ -89,12 +92,18 @@ int main()
 	// enable depth testing in it tests what coorinates are in front of other within the z axis
 	glEnable(GL_DEPTH_TEST);
 
+	// enable Multi Sample Anti-Aliasing in OpenGL
+	glEnable(GL_MULTISAMPLE);
+
+	// enable OpenGL's built-in gamma correction
+	glEnable(GL_FRAMEBUFFER_SRGB);
+
 	// load model after enabling GL_DEPTH_TEST
 	//Model_OBJ model("Models/N64 Logo/n64_logo.obj");
 	Model_OBJ model("Models/N64 Logo/n64_logo.obj");
 
 	// set up the shader proggram that we will use for our model
-	SDR model_shader("model_lighting_multiple_light_sources_gourand_2.vert", "model_lighting_multiple_light_sources_gourand_2.frag");
+	SDR model_shader("blinn-phong.vert", "blinn-phong.frag");
 
 	// object titled shader that is apart of the SDR class, takes in two arguments which are the vertex shader file path and the fragment shader file path
 	SDR shader_for_cube("lighting_test.vert", "lighting_test.frag");
@@ -246,12 +255,12 @@ int main()
 
 	std::vector<std::string> sky_box_textures
 	{
-		"skybox/right.jpg", 
-		"skybox/left.jpg",
-		"skybox/top.jpg",
-		"skybox/bottom.jpg",
-		"skybox/back.jpg",
-		"skybox/front.jpg"
+		"retro_skyboxes_pack/Classic/vz_classic_right.png", 
+		"retro_skyboxes_pack/Classic/vz_classic_left.png",
+		"retro_skyboxes_pack/Classic/vz_classic_up.png",
+		"retro_skyboxes_pack/Classic/vz_classic_down.png",
+		"retro_skyboxes_pack/Classic/vz_classic_front.png",
+		"retro_skyboxes_pack/Classic/vz_classic_back.png"
 	};
 
 
