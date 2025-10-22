@@ -306,7 +306,7 @@ int main()
 	// enable that vertex attribute to point 1
 	glEnableVertexAttribArray(1);
 
-	glBindVertexArray(0);
+	
 
 	// Create a vertex buffer object and a vertex array object for the sky box
 	unsigned int SKYBOX_VBO, SKYBOX_VAO;
@@ -325,7 +325,7 @@ int main()
 	// enable that vertex attribute to point 0
 	glEnableVertexAttribArray(0);
 
-	//glBindVertexArray(0);
+
 
 	// create a vertex buffer object and a vertex array object for the floor
 	unsigned int FLOOR_VBO, FLOOR_VAO;
@@ -354,7 +354,40 @@ int main()
 
 	glEnableVertexAttribArray(2);
 
-	//glBindVertexArray(0);
+	// WIDTH and HEIGHT of the shadows
+	const unsigned int WIDTH_OF_SHADOW = 1024, HEIGHT_OF_SHADOW = 1024;
+
+	// create a var to store depth map / shadow map frame buffer object FBO 
+	unsigned int Frame_Buffer_Object_Depth_Map;
+
+	// use glGenFrameBuffers to turn our prior variable into a frame buffer object
+	glGenBuffers(1, &Frame_Buffer_Object_Depth_Map);
+
+	// create depth texture var that we will use for casting shadows
+	unsigned int depth_map_texture;
+	// use var that we previously declared to turn it into a texture object
+	glGenTextures(1, &depth_map_texture);
+	// bind the previous texture object created as a GL_TEXTURE_2D
+	glBindTexture(GL_TEXTURE_2D, depth_map_texture);
+	// set the parameters for the depth map texture
+	// use nearest for both min and mag filters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// use repeat for x and y texture wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// bind the framebuffer with glBindFramebuffer to begin adding data to our frame buffer object
+	glBindFramebuffer(GL_FRAMEBUFFER, Frame_Buffer_Object_Depth_Map);
+	// add the texture we created prior for the shadows and attach it to the framebuffer's depth using GL_DEPTH_ATTACHMENT in the OpenGL function glFramebufferTexture2D
+	// this is what determines the depth for where to cast the shadow texture, since the texture has no picture it will be just black
+	// to summarize, this texture is tied to the frame buffer objects depth to cast shadows
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_texture, 0);
+	// we do not want any picture/color displayed for the shadows so we will set glDrawBuffer and glReadBuffer to the type GL_NONE
+	// this is because we only want the depth information and to not render any color data
+	glDrawBuffer(GL_NONE);
+	glDrawBuffer(GL_NONE);
+	// I think this means we are done setting up our Frame Buffer Object and just set it to 0 like a VAO
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	unsigned int floor_texID = tex_load("Textures/checkerboard_pattern.jpg");
 
@@ -387,6 +420,19 @@ int main()
 		// This actually clears the buffer of the entire framebuffer as well as the depth buffer each frame in this while loop which is are renderer
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		// create a perspective and view matrix to create a light "pov" which helps us determine which objects are in the light and which are occluded thus being in shadow
+		// remember for a directional light for shadows, we don't provide a transformation matrix since we want to simulate a light that is 
+		glm::mat4 light_perspective_matrix, light_view_matrix;
+
+		// float values specifying the near and far plane for the light's perspective matrix
+		float perspective_near_plane = 1.0f, perspective_far_plane = 7.5f;
+
+		// we use orthographic projection for our perspective matrix becuase for directional lighting with shadows it is recomended to use it
+		// look at how small this perspective matrix is, anything in it will be in the light "line of sight" and everything outside of it will be clipped / not affected by light
+		light_perspective_matrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, perspective_near_plane, perspective_far_plane);
+
+		// now we create the view matrix for the light, we use a look at matrix similar to what we use in our camera class; however, we specify the position/direction, we tell it to look at the center of the scene, and of course the world up vector
+		light_view_matrix = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
 		// this is our view_matrix this is what allows us to see our objects in a 3D space
 		glm::mat4 view_matrix = cam_and_mov_obj.Obtain_View_Matrix();
 		
