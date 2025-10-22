@@ -111,6 +111,8 @@ int main()
 	// set up the shader program that we wil use for our skybox
 	SDR skybox_shader("skybox.vert", "skybox.frag");
 
+	SDR floor_shader("floor_shader.vert", "floor_shader.frag");
+
 	// our vertices to draw with OpenGL
 	float vertex_data[] = {
 
@@ -237,6 +239,24 @@ int main()
 		
 	};
 
+
+	// vertices for the floor 
+	float floor_vertices[] =
+
+	{
+
+		// Positional Coordinates	 // Normal Coordinates	// Texture Coordinates
+		// 1st Triangle
+		25.0f, -0.5f, 25.0f,		 0.0f, 1.0f, 0.0f,		25.0f, 0.0f,
+	   -25.0f, -0.5f, 25.0f,		 0.0f, 1.0f, 0.0f,		0.0f,  0.0f,
+	   -25.0f, -0.5f, -25.0f,		 0.0f, 1.0f, 0.0f,		0.0f, 25.0f,
+
+	   // 2nd Triangle 
+	   25.0f, -0.5f, 25.0f,		 0.0f, 1.0f, 0.0f,	    25.0f, 0.0f,
+	  -25.0f, -0.5f, -25.0f,     0.0f, 1.0f, 0.0f,      0.0f,  25.0f,
+	   25.0f,  -0.5f, -25.0f,     0.0f, 1.0f, 0.0f,      25.0f, 25.0f
+	};
+
 	std::vector<glm::vec3> object_model_transormation_world_positions
 	{
 		glm::vec3(0.0, 0.0, 0.0),
@@ -249,8 +269,8 @@ int main()
 	std::vector<glm::vec3> light_pos
 	{
 		glm::vec3(3.0, 3.0, 3.0),
-		glm::vec3(-2.0, -1.0, -1.0),
-		glm::vec3(4.0, -3.0, 2)
+		glm::vec3(-2.0, 5.0, -1.0),
+		glm::vec3(4.0, 3.0, 2)
 	};
 
 	std::vector<std::string> sky_box_textures
@@ -277,7 +297,7 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, VERTEX_BUFFER_OBJECT);
 	// tell OpenGL what type of data to take in, the array that the vertex data is stored, the size of that array, and how it should draw that data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
-	// sets the position attribute within the vertex data, like which attribute to start on, how many verticies to expect, what data type to use, whether they want the data to be in unsigned ints form, the size of the each vertex attribute, and the offset
+	// 	// sets the position attribute within the vertex data, like which attribute to start on, how many vertices to expecct, what data type to use, whether the data to be normalized or not, the spacing of the vertex data, and the offset
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	// enable that vertex attribute to point 0
 	glEnableVertexAttribArray(0);
@@ -285,6 +305,8 @@ int main()
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	// enable that vertex attribute to point 1
 	glEnableVertexAttribArray(1);
+
+	glBindVertexArray(0);
 
 	// Create a vertex buffer object and a vertex array object for the sky box
 	unsigned int SKYBOX_VBO, SKYBOX_VAO;
@@ -298,36 +320,47 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, SKYBOX_VBO);
 	// tell OpenGL what type of data to take in, the array that the vertex data is stored, the size of that array, and how it should draw that data
 	glBufferData(GL_ARRAY_BUFFER, sizeof(verticies_for_skybox), verticies_for_skybox, GL_STATIC_DRAW);
-	// sets the position attribute within the vertex data, like which attribute to start on, how many vertices to expect, what data type to use, whether the data to be in unsigned ints form, the size of each vertex attribute, and the offset
+	// sets the position attribute within the vertex data, like which attribute to start on, how many vertices to expecct, what data type to use, whether the data to be normalized or not, the spacing of the vertex data, and the offset
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	// enable that vertex attribute to point 0
 	glEnableVertexAttribArray(0);
 
-	//unsigned int tex_to_shader = tex_load("water.png");
+	//glBindVertexArray(0);
 
-	//unsigned int layer_2_tex_to_shader = tex_load("checkerboard_pattern.jpg");
+	// create a vertex buffer object and a vertex array object for the floor
+	unsigned int FLOOR_VBO, FLOOR_VAO;
+	// generate 1 vertex array object with glGenVertexArrays for the floor
+	glGenVertexArrays(1, &FLOOR_VAO);
+	// generate 1 vertex buffer object with glGenBuffers for the floor
+	glGenBuffers(1, &FLOOR_VBO);
+	// bind the vertex array object with glBindVertexArray for the floor
+	glBindVertexArray(FLOOR_VAO);
+	// bind the vertex buffer object to a ggl array buffer using glBindBuffer for the skybox
+	glBindBuffer(GL_ARRAY_BUFFER, FLOOR_VBO);
+	// tell OpenGL what type of data to take in, the array that the vertex data is stored, the size of that array, and how it should draw that data
+	glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), floor_vertices, GL_STATIC_DRAW);
+	// sets the position attribute within the vertex data, like which attribute to start on, how many vertices to expecct, what data type to use, whether the data to be normalized or not, the spacing of the vertex data, and the offset
+	// POSITIONAL COORDINATES
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	// enable that vertex attribute to point 0
+	glEnableVertexAttribArray(0);
+	// NORMAL COORDNIATES
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	
+	glEnableVertexAttribArray(1);
 
-	// activate the shader and use the shader program
-	//shader_for_cube.activate_shader();
+	// Texture Coordinates
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
-	//model_shader.activate_shader();
+	glEnableVertexAttribArray(2);
 
+	//glBindVertexArray(0);
 
-	// bug where even though we have the texture IDs activated based on the texID, we still have to activate the default GLenum texture unit and bind it to the corresponding texture
-	// its an odd issue that is common with OpenGL
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, tex_to_shader);
-
-	//glActiveTexture(GL_TEXTURE1);
-	//glBindTexture(GL_TEXTURE_2D, layer_2_tex_to_shader);
-
-	//shader.uniform_int("tex", 0);
-
-	//shader.uniform_int("layer_tex", 1);
+	unsigned int floor_texID = tex_load("Textures/checkerboard_pattern.jpg");
 
 	unsigned int skybox_texID = skybox_load(sky_box_textures);
 
-	std::cout << skybox_texID << std::endl; 
+	std::cout << floor_texID << std::endl; 
 
 	skybox_shader.activate_shader();
 
@@ -355,51 +388,20 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// this is our view_matrix this is what allows us to see our objects in a 3D space
-
 		glm::mat4 view_matrix = cam_and_mov_obj.Obtain_View_Matrix();
-
-
-		// moving the camera from the origin position back to give more space to see the objects
-		//view_matrix = glm::translate(view_matrix, glm::vec3(0.0, 0.0, -1.0));
-
-		// using the lookAt GLFW function to move view matrix around in real time
-		// 1st argument: camera/view's position in world space
-		// 2nd argument: camera/view's position in terms of where it's looking AKA it's "eye"
-		// 3rd argument: a 3-coordinate vector pointing up in world space (0.0, 1.0, 0.0) 
-		//view_matrix = glm::lookAt(glm::vec3(glm::sin((float)glfwGetTime() * 2), 0.0, glm::cos((float)glfwGetTime() * 2)), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-
+		
 		// this is our projection matrix which gives our object depth of field by changing the camera  
 		glm::mat4 perspective_matrix = glm::mat4(1.0f);
 		perspective_matrix = glm::perspective(glm::radians(90.0f), (float)SCREEN_WIDTH / SCREEN_HEIGHT, 0.1F, 100.0F);
 
-		// moves the object back and forth in real time while staying within the range of 0.0-1.0
-		float sin_translate = glm::sin((float)glfwGetTime());
-			
-		// send our 4x4 view matrix to the vertex shader
-		//shader_for_cube.uniform_matrix_4("view_matrix", view_matrix);
-		// send our 4x4 projection matrix to the vertex shader
-		//shader_for_cube.uniform_matrix_4("perspective_matrix", perspective_matrix);
-
-	
-
-		// bind the vertex array you created earlier
-		//glBindVertexArray(VERTEX_ARRAY_OBJECT);
-
-		
-		//glDrawArrays(GL_TRIANGLES, 0, 36);
-
 		model_shader.activate_shader();
 
-		//glm::vec3 color_of_light = glm::vec3(sin_translate, sin_translate, 1.0f);
 		glm::vec3 color_of_light = glm::vec3(1.0f, 1.0f, 1.0f);
-
-		//model_shader.uniform_vector_3("color_of_light", color_of_light);
 
 		model_shader.uniform_matrix_4("view_matrix", view_matrix);
 
 		model_shader.uniform_matrix_4("perspective_matrix", perspective_matrix);
 
-		//model_shader.uniform_vector_3("light_pos", light_pos[0]);
 
 		model_shader.uniform_vector_3("pos_of_camera", cam_and_mov_obj.obj_cam_pos);
 
@@ -492,6 +494,8 @@ int main()
 
 		transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5));
 
+		transformation_matrix = glm::translate(transformation_matrix, glm::vec3(0.0, -1.0, 0.0));
+
 		glm::mat3 transformation_matrix_for_normal_coordinates = glm::mat3(1.0f);
 
 		transformation_matrix_for_normal_coordinates = glm::transpose(glm::inverse(transformation_matrix));
@@ -502,19 +506,36 @@ int main()
 
 		model.Draw_Model(model_shader);
 
+	
+		// FLOOR
+
+		glActiveTexture(GL_TEXTURE0);
+
+		glBindTexture(GL_TEXTURE_2D, floor_texID);
+
+		floor_shader.activate_shader();
+
+		transformation_matrix = glm::mat4(1.0f);
+		
+		floor_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
+
+		floor_shader.uniform_matrix_4("view_matrix", view_matrix);
+
+		floor_shader.uniform_matrix_4("perspective_matrix", perspective_matrix);
+
+		floor_shader.uniform_int("floor_texture", 0);
+
+		glBindVertexArray(FLOOR_VAO);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
 		shader_for_cube.activate_shader();
 
 		shader_for_cube.uniform_vector_3("color_of_light", color_of_light);
 
 		glBindVertexArray(VERTEX_ARRAY_OBJECT);
 
-		//glm::mat4 transformation_matrix = glm::mat4(1.0f);
-
 		transformation_matrix = glm::mat4(1.0f);
-
-		//transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
-
-		//transformation_matrix = glm::scale(transformation_matrix, glm::vec3(0.5, 0.5, 0.5));
 
 		shader_for_cube.uniform_matrix_4("view_matrix", view_matrix);
 
@@ -529,8 +550,7 @@ int main()
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 	
 		}
-		
-		glBindVertexArray(0);
+
 
 		// enable depth function so that it passes vertices that are equal to depth buffer's content
 		glDepthFunc(GL_LEQUAL);
