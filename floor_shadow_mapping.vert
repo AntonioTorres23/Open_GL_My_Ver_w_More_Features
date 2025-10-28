@@ -22,7 +22,7 @@ uniform mat4 perspective_matrix;
 
 uniform mat4 light_matrix;
 
-uniform mat3 transformation_matrix_for_normal_coordinates;
+//uniform mat3 transformation_matrix_for_normal_coordinates;
 
 void main()
 {

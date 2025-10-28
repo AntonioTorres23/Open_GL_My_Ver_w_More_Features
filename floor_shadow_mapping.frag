@@ -11,7 +11,7 @@ in vec2 out_tex_pos_coordinates;
 
 uniform vec3 pos_of_cam; 
 
-uniform sampler2D diffTex1;
+uniform sampler2D floor_texture;
 
 uniform sampler2D depth_map_texture;
 
@@ -37,10 +37,19 @@ float CalcShadow(vec4 position_of_models_fragments_from_light_perspective_arg)
 	float current_depth_from_light = perspective_coords.z;
 
 	// check if current_depth_from_light is higher than closest_depth_from_light and if so, it is in shadow
-	float in_shadow = current_depth_from_light > closest_depth_from_light ? 1.0 : 0.0;
+	float in_shadow;
+
+	if (current_depth_from_light > closest_depth_from_light)
+		// fragment is in shadow
+		in_shadow = 1.0;
+	else
+		// fragment is not in shadow
+		in_shadow = 0.0;
 
 	return in_shadow;
 }
+
+
 
 void main()
 {
@@ -51,7 +60,7 @@ void main()
 	
 	vec3 direction_of_light_from_model = normalize(pos_of_light - position_of_models_fragments);
 
-	vec3 col = texture(diffTex1, out_tex_pos_coordinates).rgb;
+	vec3 col = texture(floor_texture, out_tex_pos_coordinates).rgb;
 
 	//vec3 col = vec3(1.0, 0.0, 0.0);
 
@@ -74,8 +83,5 @@ void main()
 	vec3 final_lighting = (ambient_lighting + (1.0 - shadows) * (diffuse_lighting + specular_lighting)) * col;
 
 	apply_light = vec4(final_lighting, 1.0);
-
 	//apply_light = vec4(1.0, 0.0, 0.0, 1.0);
 }
-
-
