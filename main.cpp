@@ -97,10 +97,10 @@ int main()
 	glEnable(GL_DEPTH_TEST);
 
 	// enable Multi Sample Anti-Aliasing in OpenGL
-	glEnable(GL_MULTISAMPLE);
+	//glEnable(GL_MULTISAMPLE);
 
 	// enable OpenGL's built-in gamma correction
-	glEnable(GL_FRAMEBUFFER_SRGB);
+	//glEnable(GL_FRAMEBUFFER_SRGB);
 
 	// load model after enabling GL_DEPTH_TEST
 	//Model_OBJ model("Models/N64 Logo/n64_logo.obj");
@@ -531,6 +531,10 @@ int main()
 
 		transformation_matrix = glm::translate(transformation_matrix, glm::vec3(0.0f, 1.5f, 0.0));
 
+		glm::mat3 trans_matrix_for_norm_coords = glm::mat3(1.0f);
+
+		trans_matrix_for_norm_coords = glm::transpose(glm::inverse(transformation_matrix));
+
 		model_shader.uniform_vector_3("color_of_light", color_of_light);
 
 		model_shader.uniform_vector_3("pos_of_light", glm::vec3(- 2.0f, 4.0f, -1.0f));
@@ -544,6 +548,8 @@ int main()
 		model_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
 		model_shader.uniform_matrix_4("light_matrix", light_matrix);
+
+		model_shader.uniform_matrix_3("trans_matrix_for_norm_coords", trans_matrix_for_norm_coords);
 
 		//model_shader.uniform_int("depth_map_texture", 1);
 
@@ -569,9 +575,15 @@ int main()
 
 		transformation_matrix = glm::mat4(1.0f);
 
+		trans_matrix_for_norm_coords = glm::mat3(1.0f);
+
+		trans_matrix_for_norm_coords = glm::transpose(glm::inverse(transformation_matrix));
+
 		floor_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
 		floor_shader.uniform_matrix_4("light_matrix", light_matrix);
+
+		floor_shader.uniform_matrix_3("trans_matrix_for_norm_coords", trans_matrix_for_norm_coords);
 
 		//floor_shader.uniform_int("floor_texture", 0);
 

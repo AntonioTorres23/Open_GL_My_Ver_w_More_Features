@@ -22,7 +22,7 @@ uniform mat4 perspective_matrix;
 
 uniform mat4 light_matrix;
 
-//uniform mat3 transformation_matrix_for_normal_coordinates;
+uniform mat3 trans_matrix_for_norm_coords;
 
 void main()
 {
@@ -31,7 +31,9 @@ void main()
 
 	position_of_models_fragments = vec3(transformation_matrix * vec4(vec_pos_coordinates, 1.0)); 
 	
-	out_norm_pos_coordinates = transpose(inverse(mat3(transformation_matrix))) * norm_pos_coordinates;
+	//out_norm_pos_coordinates = transpose(inverse(mat3(transformation_matrix))) * norm_pos_coordinates;
+
+	out_norm_pos_coordinates = trans_matrix_for_norm_coords * norm_pos_coordinates;
 
 	out_tex_pos_coordinates = tex_pos_coordinates;
 
