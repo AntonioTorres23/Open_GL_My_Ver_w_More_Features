@@ -436,9 +436,15 @@ int main()
 
 	quad_depth_debug.uniform_int("depth_map_texture", 0);
 
+	// look at how this is a variable that isn't initalized; this allows us to do vector based math with regular non var glm::vec3 vectors
 	glm::vec3 pos_of_light(0.0f, 1.0f, 0.0f);
 
-	glm::vec3 pos_of_model = glm::vec3(2.0f, -0.5f, 2.0f);
+	//glm::vec3 pos_of_model = glm::vec3(2.0f, -0.5f, 2.0f);
+
+	std::vector<glm::vec3> model_positions;
+
+	model_positions.push_back(glm::vec3(2.0f, -0.5f, 2.0f));
+	model_positions.push_back(glm::vec3(-2.0f, 0.1f, -2.0f));
 
 	// Our loop where we render every frame to the window
 	// If window is closed is set to true or becomes apparent, this while loop will be exited
@@ -516,14 +522,16 @@ int main()
 
 			glm::mat4 transformation_matrix = glm::mat4(1.0);
 
-			transformation_matrix = glm::translate(transformation_matrix, glm::vec3(pos_of_model));
+			for (int pos = 0; pos < model_positions.size(); pos++)
+			{
+				transformation_matrix = glm::translate(transformation_matrix, glm::vec3(model_positions[pos]));
 
-			transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
+				//transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-			depth_for_shadow_mapping_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
+				depth_for_shadow_mapping_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
-			model.Draw_Model(depth_for_shadow_mapping_shader);
-
+				model.Draw_Model(depth_for_shadow_mapping_shader);
+			}
 			transformation_matrix = glm::mat4(1.0f);
 
 			depth_for_shadow_mapping_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
@@ -548,35 +556,40 @@ int main()
 
 		transformation_matrix = glm::mat4(1.0f);
 
-		transformation_matrix = glm::translate(transformation_matrix, glm::vec3(pos_of_model));
+		for (int pos = 0; pos < model_positions.size(); pos++)
+		{
 
-		transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-		glm::mat3 trans_matrix_for_norm_coords = glm::mat3(1.0f);
 
-		trans_matrix_for_norm_coords = glm::transpose(glm::inverse(transformation_matrix));
+			transformation_matrix = glm::translate(transformation_matrix, model_positions[pos]);
 
-		model_shader.uniform_vector_3("color_of_light", color_of_light);
+			//transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
-		model_shader.uniform_vector_3("pos_of_light", pos_of_light);
+			glm::mat3 trans_matrix_for_norm_coords = glm::mat3(1.0f);
 
-		model_shader.uniform_float("perspective_far_plane", perspective_far_plane);
+			trans_matrix_for_norm_coords = glm::transpose(glm::inverse(transformation_matrix));
 
-		model_shader.uniform_vector_3("pos_of_cam", cam_and_mov_obj.obj_cam_pos);
+			model_shader.uniform_vector_3("color_of_light", color_of_light);
 
-		model_shader.uniform_matrix_4("view_matrix", view_matrix);
+			model_shader.uniform_vector_3("pos_of_light", pos_of_light);
 
-		model_shader.uniform_matrix_4("perspective_matrix", perspective_matrix);
+			model_shader.uniform_float("perspective_far_plane", perspective_far_plane);
 
-		model_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
+			model_shader.uniform_vector_3("pos_of_cam", cam_and_mov_obj.obj_cam_pos);
 
-		model_shader.uniform_matrix_3("trans_matrix_for_norm_coords", trans_matrix_for_norm_coords);
+			model_shader.uniform_matrix_4("view_matrix", view_matrix);
 
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_map_texture);
+			model_shader.uniform_matrix_4("perspective_matrix", perspective_matrix);
 
-		model.Draw_Model(model_shader);
+			model_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
+			model_shader.uniform_matrix_3("trans_matrix_for_norm_coords", trans_matrix_for_norm_coords);
+
+			glActiveTexture(GL_TEXTURE1);
+			glBindTexture(GL_TEXTURE_CUBE_MAP, depth_map_texture);
+
+			model.Draw_Model(model_shader);
+		}
 		// FLOOR
 
 		floor_shader.activate_shader();
@@ -596,7 +609,7 @@ int main()
 
 		transformation_matrix = glm::mat4(1.0f);
 
-		trans_matrix_for_norm_coords = glm::mat3(1.0f);
+		glm::mat3 trans_matrix_for_norm_coords = glm::mat3(1.0f);
 
 		trans_matrix_for_norm_coords = glm::transpose(glm::inverse(transformation_matrix));
 
