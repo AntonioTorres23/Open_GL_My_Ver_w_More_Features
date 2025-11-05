@@ -25,19 +25,25 @@ public:
 	unsigned int shader_program_id;
 	// constructor that reads the vertex and fragment shader and builds the shader program
 	// takes the file name and path of the vertex and fragment shader files as its arguments
-	SDR(const char* vertex_shader_file, const char* fragment_shader_file)
+	// has 3 arguments in which geometry shader is set as a nullptr if it is not provided when creating the object; This ensures you can still create shader programs without a geometry shader
+	SDR(const char* vertex_shader_file, const char* fragment_shader_file, const char* geometry_shader_file = nullptr)
 	{
 		// string to store vertex source code
 		std::string vertex_shader_source_code;
 		// string to store fragment source code
 		std::string fragment_shader_source_code;
+		// string to store geometry source code
+		std::string geometry_shader_source_code;
 		// ifstream which reads the vertex file
 		std::ifstream vertex_source_stream;
 		// ifstream which reads the fragment file
 		std::ifstream fragment_source_stream;
+		// ifstream which reads the geometry file
+		std::ifstream geometry_source_stream;
 		// enable failbits for the source streams so that they can through exceptions in try blocks
 		vertex_source_stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		fragment_source_stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		geometry_source_stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		// try block to attempt to read shader files
 		try 
 		{
@@ -45,7 +51,7 @@ public:
 			vertex_source_stream.open(vertex_shader_file);
 			fragment_source_stream.open(fragment_shader_file);
 			// create a vertex and string stream to transfer the ifstream previously
-			std::stringstream vertex_string_stream, fragment_string_stream;
+			std::stringstream vertex_string_stream, fragment_string_stream, geometry_string_stream;
 			// read the buffers of the ifstream variables to the string stream variables using the << symbol
 			vertex_string_stream << vertex_source_stream.rdbuf();
 			fragment_string_stream << fragment_source_stream.rdbuf();
@@ -55,6 +61,20 @@ public:
 			// convert from string stream just to a regular string
 			vertex_shader_source_code = vertex_string_stream.str();
 			fragment_shader_source_code = fragment_string_stream.str();
+
+			// if geometry shader exists, we read the file and grab the source code
+			if (geometry_shader_file != nullptr)
+			{
+				// attempt to open the geometry shader file
+				geometry_source_stream.open(geometry_shader_file);
+				// read the buffers of the ifstream variables to the string stream variables using the << symbol
+				geometry_string_stream << geometry_source_stream.rdbuf();
+				// close the ifstreams
+				geometry_source_stream.close();
+				// convert from string stream just to a regular string
+				geometry_shader_source_code = geometry_string_stream.str();
+			}
+			
 		}
 		// this is your catch statment if anything goes wrong with reading the source code from the shader files
 		catch (std::ifstream::failure &error_ifstream)
@@ -65,7 +85,7 @@ public:
 		const char* c_vertex_source_code = vertex_shader_source_code.c_str();
 		const char* c_fragment_source_code = fragment_shader_source_code.c_str();
 		// create an unsigned int for the vertex shader and fragment shader
-		unsigned int vertex_shader, fragment_shader;
+		unsigned int vertex_shader, fragment_shader, geometry_shader;
 		// create a shader with glCreateShader function and use GL_VERTEX_SHADER enum
 		vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 		// add the source code to the vertex shader
@@ -82,20 +102,42 @@ public:
 		glCompileShader(fragment_shader);
 		// use compile_shader_check to check for any compiling errors
 		compile_shader_check(fragment_shader, "FRAGMENT");
+		// if geometry shader exists, convert shader source code to c_string, create a shader, and compile it
+		if (geometry_shader_file != nullptr)
+		{
+			// create a geometry shader with glCreateShader and use GL_GEOMETRY_SHADER enum
+			const char* c_geometry_source_code = geometry_shader_source_code.c_str();
+			geometry_shader = glCreateShader(GL_GEOMETRY_SHADER);
+			// add the source code to the geometry shader
+			glShaderSource(geometry_shader, 1, &c_geometry_source_code, NULL);
+			// compile the goemetry shader
+			glCompileShader(geometry_shader);
+			// use compile_shader_check to check for any compiling errors
+			compile_shader_check(geometry_shader, "GEOMETRY");
+		}
 		// the program to link the two shaders together
 		shader_program_id = glCreateProgram();
 		// attach vertex shader to shader program
 		glAttachShader(shader_program_id, vertex_shader);
 		// attach fragment shader to shader program
 		glAttachShader(shader_program_id, fragment_shader);
-		// link the two shaders together in the shader program
+		// if geometry shader exists, attach it to the shader program
+		if (geometry_shader_file != nullptr)
+		{
+			glAttachShader(shader_program_id, geometry_shader);
+		}
+		// link the two/three shaders together in the shader program
 		glLinkProgram(shader_program_id);
 		// check for any errors while linking the two shaders in the shader program
 		compile_shader_check(shader_program_id, "PROGRAM");
 		// delete the vertex and fragment shaders since they are not needed anymore
 		glDeleteShader(vertex_shader);
 		glDeleteShader(fragment_shader);
-		
+		// if geometry shader exists, delete geometry shader
+		if (geometry_shader_file != nullptr)
+		{
+			glDeleteShader(geometry_shader);
+		}
 
 	}
 

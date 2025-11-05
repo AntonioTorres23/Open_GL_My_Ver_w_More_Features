@@ -23,7 +23,7 @@ void window_resize_callback(GLFWwindow *win, int w, int h);
 unsigned int tex_load(const char *tex_path);
 unsigned int skybox_load(std::vector<std::string> skybox_faces_arg);
 void generateQuad();
-//void Draw_World(SDR model_shader, SDR floor_shader, Model_OBJ model_arg);
+
 
 
 // screen dimensions stored as global integer variables
@@ -107,7 +107,7 @@ int main()
 	Model_OBJ model("Models/N64 Logo/n64_logo.obj");
 
 	// set up the shader proggram that we will use for our model
-	SDR model_shader("shadow_mapping.vert", "shadow_mapping.frag");
+	SDR model_shader("omnidirectional_shadow_mapping.vert", "omnidirectional_shadow_mapping.frag");
 
 	// object titled shader that is apart of the SDR class, takes in two arguments which are the vertex shader file path and the fragment shader file path
 	SDR shader_for_cube("lighting_test.vert", "lighting_test.frag");
@@ -116,10 +116,10 @@ int main()
 	SDR skybox_shader("skybox.vert", "skybox.frag");
 
 	// set up shader program that we will use for our floor
-	SDR floor_shader("floor_shadow_mapping.vert", "floor_shadow_mapping.frag");
+	SDR floor_shader("floor_omnidirectional_shadow_map.vert", "floor_omnidirectional_shadow_map.frag");
 
 	// set up shader program that we will use for our frame buffer object that will help calculate shadow mapping
-	SDR depth_for_shadow_mapping_shader("fbo_depth.vert", "fbo_depth.frag");
+	SDR depth_for_shadow_mapping_shader("fbo_depth_omnidirectional_shadows.vert", "fbo_depth_omnidirectional_shadows.frag", "fbo_depth_omnidirectional_shadows.geom");
 
 	SDR quad_depth_debug("quad.vert", "quad.frag");
 
@@ -378,23 +378,26 @@ int main()
 	// use var that we previously declared to turn it into a texture object
 	glGenTextures(1, &depth_map_texture);
 	// bind the previous texture object created as a GL_TEXTURE_2D
-	glBindTexture(GL_TEXTURE_2D, depth_map_texture);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, WIDTH_OF_SHADOW, HEIGHT_OF_SHADOW, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depth_map_texture);
+	// create a for loop that iterates through 6 different faces to create the cubemap
+	for (unsigned int face = 0; face < 6; face++)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, 0, GL_DEPTH_COMPONENT, WIDTH_OF_SHADOW, HEIGHT_OF_SHADOW, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	}
 	// set the parameters for the depth map texture
 	// use nearest for both min and mag filters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	// use repeat for x and y texture wrapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// use repeat for x, y, and z texture wrapping
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	// bind the framebuffer with glBindFramebuffer to begin adding data to our frame buffer object
 	glBindFramebuffer(GL_FRAMEBUFFER, Frame_Buffer_Object_Depth_Map);
 	// add the texture we created prior for the shadows and attach it to the framebuffer's depth using GL_DEPTH_ATTACHMENT in the OpenGL function glFramebufferTexture2D
 	// this is what determines the depth values for where to cast the shadow texture, since the texture has no picture it will be just black
 	// to summarize, this texture is tied to the frame buffer objects depth to cast shadows
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map_texture, 0);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_map_texture, 0);
 	// we do not want any picture/color displayed for the shadows so we will set glDrawBuffer and glReadBuffer to the type GL_NONE
 	// this is because we only want the depth information and to not render any color data
 	glDrawBuffer(GL_NONE);
@@ -433,7 +436,9 @@ int main()
 
 	quad_depth_debug.uniform_int("depth_map_texture", 0);
 
-	glm::vec3 pos_of_light = glm::vec3(-1.0f, 2.0f, -2.0f);
+	glm::vec3 pos_of_light(0.0f, 1.0f, 0.0f);
+
+	glm::vec3 pos_of_model = glm::vec3(2.0f, -0.5f, 2.0f);
 
 	// Our loop where we render every frame to the window
 	// If window is closed is set to true or becomes apparent, this while loop will be exited
@@ -464,26 +469,29 @@ int main()
 
 		// create a perspective and view matrix to create a light "pov" which helps us determine which objects are in the light and which are occluded thus being in shadow
 		// remember for a directional light for shadows, we don't provide a transformation matrix since we want to simulate a light that is 
-		glm::mat4 light_perspective_matrix, light_view_matrix;
+		glm::mat4 light_perspective_matrix;
 
 		// float values specifying the near and far plane for the light's perspective matrix
-		float perspective_near_plane = 1.0f, perspective_far_plane = 7.5f;
+		float perspective_near_plane = 1.0f, perspective_far_plane = 25.0f;
 
-		// we use orthographic projection for our perspective matrix becuase for directional lighting with shadows it is recomended to use it
+		float aspect_ratio = (float)WIDTH_OF_SHADOW / (float)HEIGHT_OF_SHADOW;
+		
 		// look at how small this perspective matrix is, anything in it will be in the light "line of sight" and everything outside of it will be clipped / not affected by light
-		light_perspective_matrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, perspective_near_plane, perspective_far_plane);
+		//light_perspective_matrix = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, perspective_near_plane, perspective_far_plane);
+		light_perspective_matrix = glm::perspective(glm::radians(90.0f), aspect_ratio, perspective_near_plane, perspective_far_plane);
 
 		// now we create the view matrix for the light, we use a look at matrix similar to what we use in our camera class; however, we specify the position/direction, we tell it to look at the center of the scene, and of course the world up vector
-		light_view_matrix = glm::lookAt(glm::vec3(-2.0f, 4.0f, -1.0f), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-		
-		// we then combine our view and perspective matrices to make our light_matrix
-		glm::mat4 light_matrix = light_perspective_matrix * light_view_matrix;
-		
-		// activate depth shader program
-		depth_for_shadow_mapping_shader.activate_shader();
+		// for this case with a cubemap we need to specify
+		std::vector<glm::mat4> light_matrices;
 
-		// send our light_matrix to the depth shader
-		depth_for_shadow_mapping_shader.uniform_matrix_4("light_matrix", light_matrix);
+		
+
+		light_matrices.push_back(light_perspective_matrix * glm::lookAt(pos_of_light, pos_of_light + (1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		light_matrices.push_back(light_perspective_matrix* glm::lookAt(pos_of_light, pos_of_light + (-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		light_matrices.push_back(light_perspective_matrix * glm::lookAt(pos_of_light, pos_of_light + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+		light_matrices.push_back(light_perspective_matrix * glm::lookAt(pos_of_light, pos_of_light + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
+		light_matrices.push_back(light_perspective_matrix * glm::lookAt(pos_of_light, pos_of_light + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
+		light_matrices.push_back(light_perspective_matrix * glm::lookAt(pos_of_light, pos_of_light + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
 
 		// switch our viewport to the width and height of our shadow
 		glViewport(0, 0, WIDTH_OF_SHADOW, HEIGHT_OF_SHADOW);
@@ -494,11 +502,23 @@ int main()
 			// clear depth buffer bit
 			glClear(GL_DEPTH_BUFFER_BIT);
 
+			// activate depth shader program
+			depth_for_shadow_mapping_shader.activate_shader();
+			// send our light_matrices to the depth shader
+			for (unsigned int face = 0; face < 6; ++face)
+				depth_for_shadow_mapping_shader.uniform_matrix_4("light_matrices[" + std::to_string(face) + "]", light_matrices[face]);
+
 			// RENDER SCENE WITH IN DEPTH BUFFER FIRST		
+
+			depth_for_shadow_mapping_shader.uniform_vector_3("pos_of_light", pos_of_light);
+
+			depth_for_shadow_mapping_shader.uniform_float("perspective_far_plane", perspective_far_plane);
 
 			glm::mat4 transformation_matrix = glm::mat4(1.0);
 
-			transformation_matrix = glm::translate(transformation_matrix, glm::vec3(0.0f, 1.5f, 0.0));
+			transformation_matrix = glm::translate(transformation_matrix, glm::vec3(pos_of_model));
+
+			transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 			depth_for_shadow_mapping_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
@@ -507,14 +527,13 @@ int main()
 			transformation_matrix = glm::mat4(1.0f);
 
 			depth_for_shadow_mapping_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
-			
+
 			glBindVertexArray(FLOOR_VAO);
 
-
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		// disable depth FBO after all the objects are rendered
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		
+			// disable depth FBO after all the objects are rendered
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		// NOW SWITCH BACK TO RENDERING A NORMAL SCENE
 		// set viewport to original width and height
@@ -529,7 +548,9 @@ int main()
 
 		transformation_matrix = glm::mat4(1.0f);
 
-		transformation_matrix = glm::translate(transformation_matrix, glm::vec3(0.0f, 1.5f, 0.0));
+		transformation_matrix = glm::translate(transformation_matrix, glm::vec3(pos_of_model));
+
+		transformation_matrix = glm::rotate(transformation_matrix, (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
 
 		glm::mat3 trans_matrix_for_norm_coords = glm::mat3(1.0f);
 
@@ -537,7 +558,9 @@ int main()
 
 		model_shader.uniform_vector_3("color_of_light", color_of_light);
 
-		model_shader.uniform_vector_3("pos_of_light", glm::vec3(- 2.0f, 4.0f, -1.0f));
+		model_shader.uniform_vector_3("pos_of_light", pos_of_light);
+
+		model_shader.uniform_float("perspective_far_plane", perspective_far_plane);
 
 		model_shader.uniform_vector_3("pos_of_cam", cam_and_mov_obj.obj_cam_pos);
 
@@ -547,14 +570,10 @@ int main()
 
 		model_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
-		model_shader.uniform_matrix_4("light_matrix", light_matrix);
-
 		model_shader.uniform_matrix_3("trans_matrix_for_norm_coords", trans_matrix_for_norm_coords);
 
-		//model_shader.uniform_int("depth_map_texture", 1);
-
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, depth_map_texture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_map_texture);
 
 		model.Draw_Model(model_shader);
 
@@ -564,9 +583,11 @@ int main()
 
 		floor_shader.uniform_vector_3("color_of_light", color_of_light);
 
-		floor_shader.uniform_vector_3("pos_of_light", glm::vec3(-2.0f, 4.0f, -1.0f));
+		floor_shader.uniform_vector_3("pos_of_light", glm::vec3(pos_of_light));
 
 		floor_shader.uniform_vector_3("pos_of_cam", cam_and_mov_obj.obj_cam_pos);
+
+		floor_shader.uniform_float("perspective_far_plane", perspective_far_plane);
 
 
 		floor_shader.uniform_matrix_4("view_matrix", view_matrix);
@@ -581,13 +602,7 @@ int main()
 
 		floor_shader.uniform_matrix_4("transformation_matrix", transformation_matrix);
 
-		floor_shader.uniform_matrix_4("light_matrix", light_matrix);
-
 		floor_shader.uniform_matrix_3("trans_matrix_for_norm_coords", trans_matrix_for_norm_coords);
-
-		//floor_shader.uniform_int("floor_texture", 0);
-
-		//floor_shader.uniform_int("depth_map_texture", 1);
 
 		glBindVertexArray(FLOOR_VAO);
 
@@ -596,7 +611,7 @@ int main()
 		glBindTexture(GL_TEXTURE_2D, floor_texID);
 
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, depth_map_texture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_map_texture);
 
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -610,12 +625,9 @@ int main()
 		quad_depth_debug.uniform_float("plane_far", perspective_far_plane);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, depth_map_texture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_map_texture);
 
 		//generateQuad();
-
-
-		
 
 		// enable depth function so that it passes vertices that are equal to depth buffer's content
 		glDepthFunc(GL_LEQUAL);
